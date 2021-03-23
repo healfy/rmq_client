@@ -2,7 +2,7 @@ import os.path
 
 from setuptools import find_packages, setup
 
-from clients import __version__
+__version__ = '0.1.0'
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 REQUIREMENTS = os.path.join(BASE_DIR, 'requirements.txt')
