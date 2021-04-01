@@ -2,7 +2,7 @@ import abc
 import typing
 import asyncio
 from aio_pika import (
-    connect,
+    connect_robust,
     Exchange,
     ExchangeType,
     IncomingMessage,
@@ -90,7 +90,7 @@ class BaseRabbitMQClient(AbstractRabbitMQClient):
         self._url = f'amqp://{username}:{password}@{host}/'
 
     async def connect(self) -> Connection:
-        return await connect(self.url, loop=self._loop)
+        return await connect_robust(self.url, loop=self._loop)
 
     async def declare_exchange(self, channel: Channel) -> Exchange:
         return await channel.declare_exchange(
