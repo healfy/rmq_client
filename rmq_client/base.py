@@ -100,5 +100,5 @@ class BaseRabbitMQClient(AbstractRabbitMQClient):
     async def declare_queue(self, channel: Channel) -> Queue:
 
         return await channel.declare_queue(
-            f'{self.queue_name}_queue', exclusive=True, durable=True
+            f'{self.queue_name}_queue', durable=True
         )
