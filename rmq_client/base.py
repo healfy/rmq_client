@@ -1,4 +1,5 @@
 import abc
+import typing
 import asyncio
 from aio_pika import (
     connect,
@@ -14,20 +15,17 @@ from aio_pika.channel import Channel
 
 class AbstractRabbitMQClient(abc.ABC):
     _url: str
-    _loop: asyncio.BaseEventLoop
-    _connection: Connection
-    _channel: Channel
-    _logs_exchange: Exchange
+    _loop: typing.Optional[asyncio.BaseEventLoop]
     queue_name: str 
     exchange_name: str
     exchange_type: ExchangeType
     routing_key: str
     
     @abc.abstractmethod
-    async def connect(self):
+    async def connect(self) -> Connection:
         """
         Method that provides connection to broker
-        :return: None 
+        :return: Connection
         """
         pass
     
@@ -36,7 +34,7 @@ class AbstractRabbitMQClient(abc.ABC):
         return self._url
 
     @abc.abstractmethod
-    async def declare_exchange(self) -> Exchange:
+    async def declare_exchange(self, channel: Channel) -> Exchange:
         """
         Declaring Exchange
         :return: Exchange
@@ -44,7 +42,7 @@ class AbstractRabbitMQClient(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def declare_queue(self) -> Queue:
+    async def declare_queue(self, channel: Channel) -> Queue:
         """
         Declaring queue
         :return: Queue
@@ -83,26 +81,24 @@ class BaseRabbitMQClient(AbstractRabbitMQClient):
         
     def __init__(
             self, 
-            loop: asyncio.BaseEventLoop,
+            loop: asyncio.BaseEventLoop = None,
             username='guest',
             password='guest',
             host='localhost'
     ):
         self._loop = loop
         self._url = f'amqp://{username}:{password}@{host}/'
-    
-    async def connect(self):
-        self._connection = await connect(self.url, loop=self._loop)
-        self._channel = self._connection.channel()
-        await self._channel.set_qos(prefetch_count=1)
-    
-    async def declare_exchange(self) -> Exchange:
-        return await self._channel.declare_exchange(
+
+    async def connect(self) -> Connection:
+        return await connect(self.url, loop=self._loop)
+
+    async def declare_exchange(self, channel: Channel) -> Exchange:
+        return await channel.declare_exchange(
             self.exchange_name, self.exchange_type
         )
-    
-    async def declare_queue(self) -> Queue:
 
-        return await self._channel.declare_queue(
+    async def declare_queue(self, channel: Channel) -> Queue:
+
+        return await channel.declare_queue(
             f'{self.queue_name}_queue', exclusive=True, durable=True
         )

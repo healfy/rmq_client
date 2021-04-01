@@ -13,15 +13,20 @@ class BaseSubscriber(BaseRabbitMQClient, AbstractSubscriber, abc.ABC):
     """
 
     async def listen(self):
-        await self.connect()
-        self._logs_exchange = await self.declare_exchange()
+        # Perform connection
+        connection = await self.connect()
 
-        queue = await self.declare_queue()
+        # Creating a channel
+        channel = await connection.channel()
+        await channel.set_qos(prefetch_count=1)
 
-        # Binding the queue to the exchange
-        await queue.bind(self._logs_exchange, routing_key=self.routing_key)
+        # Declare an exchange
+        exchange = await self.declare_exchange(channel)
 
-        # Start listening the queue
+        # Declaring random queue
+        queue = await self.declare_queue(channel)
+
+        await queue.bind(exchange, routing_key=self.routing_key)
+
+        # Start listening the random queue
         await queue.consume(self.on_message)
-
-
