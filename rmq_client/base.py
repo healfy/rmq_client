@@ -1,26 +1,27 @@
 import abc
-import typing
 import asyncio
+import typing
+
 from aio_pika import (
-    connect_robust,
     Exchange,
     ExchangeType,
     IncomingMessage,
+    Message,
     Queue,
-    Message
+    connect_robust,
 )
-from aio_pika.connection import Connection
 from aio_pika.channel import Channel
+from aio_pika.connection import Connection
 
 
 class AbstractRabbitMQClient(abc.ABC):
     _url: str
     _loop: typing.Optional[asyncio.BaseEventLoop]
-    queue_name: str 
+    queue_name: str
     exchange_name: str
     exchange_type: ExchangeType
     routing_key: str
-    
+
     @abc.abstractmethod
     async def connect(self) -> Connection:
         """
@@ -28,26 +29,10 @@ class AbstractRabbitMQClient(abc.ABC):
         :return: Connection
         """
         pass
-    
+
     @property
     def url(self) -> str:
         return self._url
-
-    @abc.abstractmethod
-    async def declare_exchange(self, channel: Channel) -> Exchange:
-        """
-        Declaring Exchange
-        :return: Exchange
-        """
-        pass
-
-    @abc.abstractmethod
-    async def declare_queue(self, channel: Channel) -> Queue:
-        """
-        Declaring queue
-        :return: Queue
-        """
-        pass
 
 
 class AbstractSubscriber(abc.ABC):
@@ -69,6 +54,22 @@ class AbstractSubscriber(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    async def declare_exchange(self, channel: Channel) -> Exchange:
+        """
+        Declaring Exchange
+        :return: Exchange
+        """
+        pass
+
+    @abc.abstractmethod
+    async def declare_queue(self, channel: Channel) -> Queue:
+        """
+        Declaring queue
+        :return: Queue
+        """
+        pass
+
 
 class AbstractPublisher(abc.ABC):
 
@@ -78,9 +79,9 @@ class AbstractPublisher(abc.ABC):
 
 
 class BaseRabbitMQClient(AbstractRabbitMQClient):
-        
+
     def __init__(
-            self, 
+            self,
             loop: asyncio.BaseEventLoop = None,
             username='guest',
             password='guest',
@@ -91,14 +92,3 @@ class BaseRabbitMQClient(AbstractRabbitMQClient):
 
     async def connect(self) -> Connection:
         return await connect_robust(self.url, loop=self._loop)
-
-    async def declare_exchange(self, channel: Channel) -> Exchange:
-        return await channel.declare_exchange(
-            self.exchange_name, self.exchange_type
-        )
-
-    async def declare_queue(self, channel: Channel) -> Queue:
-
-        return await channel.declare_queue(
-            f'{self.queue_name}_queue', durable=True
-        )
