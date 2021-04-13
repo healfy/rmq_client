@@ -1,6 +1,6 @@
 import abc
-from .base import BaseRabbitMQClient, AbstractPublisher
 
+from .base import AbstractPublisher, BaseRabbitMQClient
 
 __all__ = [
     'BasePublisher'
